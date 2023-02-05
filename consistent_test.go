@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 )
@@ -20,7 +19,7 @@ func TestNew(t *testing.T) {
 	checkNum(x.NumberOfReplicas, 20, t)
 }
 
-func TestAddC(t *testing.T) {
+func TestAdd(t *testing.T) {
 	x := New()
 	x.AddNode("abcdefg")
 	checkNum(len(x.sortedHashes), 20, t)
@@ -28,37 +27,31 @@ func TestAddC(t *testing.T) {
 	if sort.IsSorted(x.sortedHashes) == false {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
-
-	fmt.Println("===============", x.sortedHashes)
 
 	x.AddNode("qwer")
 	checkNum(len(x.sortedHashes), 40, t)
-	fmt.Println("===============", x.sortedHashes)
 
 	if sort.IsSorted(x.sortedHashes) == false {
 		t.Errorf("expected sorted hashes to be sorted")
 	}
 }
 
-func TestRemoveC(t *testing.T) {
+func TestRemove(t *testing.T) {
 	x := New()
 	x.AddNode("abcdefg")
-	fmt.Println("===============", x.sortedHashes)
 	x.AddNode("qwer")
 	x.RemoveNode("qwer")
-	fmt.Println("===============", x.sortedHashes)
-	//checkNum(len(x.circle), 0, t)
 	checkNum(len(x.sortedHashes), 20, t)
 }
 
-func TestRemoveNonExistingC(t *testing.T) {
+func TestRemoveNonExisting(t *testing.T) {
 	x := New()
 	x.AddNode("abcdefg")
 	x.RemoveNode("abcdefghijk")
 	checkNum(len(x.sortedHashes), 0, t)
 }
 
-func TestGetEmptyC(t *testing.T) {
+func TestGetEmpty(t *testing.T) {
 	x := New()
 	_, err := x.Get("asdfsadfsadf")
 	if err == nil {
@@ -69,7 +62,7 @@ func TestGetEmptyC(t *testing.T) {
 	}
 }
 
-func TestGetSingleC(t *testing.T) {
+func TestGetSingle(t *testing.T) {
 	x := New()
 	x.AddNode("abcdefg")
 	x.AddNode("defgh")
