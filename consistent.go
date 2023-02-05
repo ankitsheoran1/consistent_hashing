@@ -1,4 +1,4 @@
-package consistent_hashing
+package main
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ type Ring struct {
 	Nodes Nodes
 }
 
-func NewC() *consistent {
+func New() *consistent {
 	c := new(consistent)
 	c.NumberOfReplicas = 20
 	c.Ring.Nodes = map[uint32]*Node{}
