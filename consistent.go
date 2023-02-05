@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"hash/crc32"
+	"hash/fnv"
 	"sort"
 	"strconv"
 	"sync"
@@ -51,7 +52,7 @@ func (c *consistent) AddNode(addr string) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < c.NumberOfReplicas; i++ {
-		id := hashKeyCRC32(addr + strconv.Itoa(i))
+		id := c.hashKey(addr + strconv.Itoa(i))
 		c.Ring.Nodes[id] = NewNode(addr, id)
 		// update sorted hash
 		c.updateSortedHashes(id)
@@ -68,7 +69,7 @@ func (c *consistent) RemoveNode(addr string) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < c.NumberOfReplicas; i++ {
-		id := hashKeyCRC32(addr + strconv.Itoa(i))
+		id := c.hashKey(addr + strconv.Itoa(i))
 		delete(c.Ring.Nodes, id)
 		idx := c.searchEquality(id)
 		c.sortedHashes = append(c.sortedHashes[:idx], c.sortedHashes[idx+1:]...)
@@ -79,7 +80,7 @@ func (c *consistent) Get(key string) (*Node, error) {
 	if len(c.sortedHashes) == 0 {
 		return nil, ErrEmptyCircle
 	}
-	hashKey := hashKeyCRC32(key)
+	hashKey := c.hashKey(key)
 	k := c.search(hashKey)
 	l := c.sortedHashes[k]
 	node := c.Ring.Nodes[l]
@@ -87,13 +88,6 @@ func (c *consistent) Get(key string) (*Node, error) {
 		return nil, errors.New("invalid key ")
 	}
 	return node, nil
-}
-
-func (c *consistent) Set(key string) *Node {
-	hashKey := hashKeyCRC32(key)
-	k := c.searchEquality(hashKey)
-	l := c.sortedHashes[k]
-	return c.Ring.Nodes[l]
 }
 
 func (c *consistent) searchEquality(key uint32) (i int) {
@@ -125,7 +119,20 @@ func NewNode(addr string, id uint32) *Node {
 	}
 }
 
-func hashKeyCRC32(key string) uint32 {
+func (c *consistent) hashKey(key string) uint32 {
+	if c.UseFnv {
+		return c.hashKeyFnv(key)
+	}
+	return c.hashKeyCRC32(key)
+}
+
+func (c *consistent) hashKeyFnv(key string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	return h.Sum32()
+}
+
+func (c *consistent) hashKeyCRC32(key string) uint32 {
 	if len(key) < 64 {
 		var scratch [64]byte
 		copy(scratch[:], key)
